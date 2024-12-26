@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>MacOS.qss</file>
+        <file>Ubuntu.qss</file>
+    </qresource>
+</RCC>

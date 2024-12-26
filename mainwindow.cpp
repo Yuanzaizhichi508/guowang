@@ -1304,3 +1304,102 @@ void MainWindow::on_GetModel_comboBox_4_activated(int index)
         ui->Log_textBrowser->append("Start failed");
     }
 }
+
+void MainWindow::on_startTestButton_clicked()
+{
+    int Cam = ui->GetCamcomboBox->currentText().toInt();
+    switch (Cam) {
+    case 1:
+        slotStartFirstCamTask();
+        break;
+    case 2:
+        slotStartSecondCamTask();
+        break;
+    case 3:
+        slotStartThirdCamTask();
+        break;
+    case 4:
+        slotStartForthCamTask();
+        break;
+    }
+}
+
+void MainWindow::on_stopTestButton_2_clicked()
+{
+    std::string trueString = ui->trueStringlineEdit->text().toStdString();
+    int Cam = ui->GetCamcomboBox->currentText().toInt();
+    switch (Cam) {
+    case 1:
+        slotEndFirstCamTask();
+        computeAccuracy(0,trueString);
+        break;
+    case 2:
+        slotEndSecondCamTask();
+        computeAccuracy(1,trueString);
+        break;
+    case 3:
+        slotEndThirdCamTask();
+        computeAccuracy(2,trueString);
+        break;
+    case 4:
+        slotEndForthCamTask();
+        computeAccuracy(3,trueString);
+        break;
+    }
+
+}
+
+void MainWindow::computeAccuracy(int streamIndex, std::string &trueString){
+    QString resultMessage;
+    while(true){
+        std::optional<DetectSectionWork<TYPE>> res = detectStreams[streamIndex]->GetResult();
+        if(res.has_value()){
+            std::string result = res.value().output.result;
+            resultMessage = QString::fromStdString(result);
+            ui->Log_textBrowser->append("识别结果: " + resultMessage);
+            int distance = levenshtein_distance(trueString,res.value().output.result);
+            int max_len = max(result.size(), trueString.size());
+            double accuracy = 1.0 - (double)distance / max_len;
+            QString accuracyStr = QString::number(accuracy, 'f', 2);
+            ui->Log_textBrowser->append("正确率:" + accuracyStr);
+            }
+        else{
+            break;
+        }
+    }
+}
+
+
+int MainWindow::levenshtein_distance(const string& s1, const string& s2)
+{
+    int m = s1.size();
+    int n = s2.size();
+
+    // 创建 DP 数组
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1));
+
+    // 初始化 DP 数组
+    for (int i = 0; i <= m; ++i) dp[i][0] = i;
+    for (int j = 0; j <= n; ++j) dp[0][j] = j;
+
+    // 填充 DP 数组
+    for (int i = 1; i <= m; ++i) {
+        for (int j = 1; j <= n; ++j) {
+            // 如果字符相同，不需要操作
+            if (s1[i - 1] == s2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else {
+                // 取插入、删除、替换的最小值
+                dp[i][j] = min({dp[i - 1][j] + 1,   // 删除
+                                dp[i][j - 1] + 1,   // 插入
+                                dp[i - 1][j - 1] + 1});  // 替换
+            }
+        }
+    }
+
+    // 返回 Levenshtein 距离
+    return dp[m][n];
+}
+
+
+

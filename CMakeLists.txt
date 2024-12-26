@@ -46,6 +46,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         StdAfx.h
         ClickableLabel.h ClickableLabel.cpp
         ImageViewer.h ImageViewer.cpp
+        resource.qrc
 
     )
 # Define target properties for Android with Qt 6 as:

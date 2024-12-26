@@ -49,6 +49,10 @@ public:
 
     void closeEvent(QCloseEvent *event);
 
+    int levenshtein_distance(const string& s1, const string& s2);
+
+    void computeAccuracy(int streamIndex, std::string &trueString);
+
 signals:
     void firstCamImageCaptured();
     void secondCamImageCaptured();
@@ -152,6 +156,10 @@ private slots:
 
     void on_GetModel_comboBox_4_activated(int index);
 
+
+    void on_startTestButton_clicked();
+
+    void on_stopTestButton_2_clicked();
 
 private:
     Ui::MainWindow *ui;
