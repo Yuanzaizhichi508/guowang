@@ -58,6 +58,8 @@ signals:
     void secondCamImageCaptured();
     void thirdCamImageCaptured();
     void forthCamImageCaptured();
+    void TestCamImageCaptured(std::unordered_map<int, std::deque<cv::Mat>>& photoQueue,
+                              QComboBox* combox, bool& isNew, int CamID);
 
 private slots:
     void on_PlcConnect_clicked();
@@ -128,6 +130,9 @@ private slots:
 
     void ForthCamImagesCapturedAndReady();
 
+    void TestCamImageCapturedAndReady(std::unordered_map<int, std::deque<cv::Mat>>& photoQueue,
+                                      QComboBox* combox, bool& isNew, int CamID);
+
     void slotUpdateCombox1();
 
     void slotUpdateCombox2();
@@ -159,7 +164,8 @@ private slots:
 
     void on_startTestButton_clicked();
 
-    void on_stopTestButton_2_clicked();
+    void on_stopTestButton_clicked();
+
 
 private:
     Ui::MainWindow *ui;
@@ -229,6 +235,7 @@ private:
     bool                 is2 = false;
     bool                 is3 = false;
     bool                 is4 = false;
+    bool                 isTest = false;
 
     /*
      * 检测相关
@@ -261,6 +268,8 @@ private:
     int idx3 = 0;
     int idx4 = 0;
     std::mutex ui_mutex;
+    std::mutex mtx1, mtx2, mtx3, mtx4;
+    std::thread testThread;
 
 
     int count1 = 0;

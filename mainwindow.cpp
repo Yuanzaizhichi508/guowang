@@ -75,6 +75,11 @@ MainWindow::MainWindow(QWidget *parent)
     /*********************************************************************************/
     QFont font("Courier");
     ui->Log_textBrowser->setFont(font);
+    connect(ui->radioButton,&QRadioButton::toggled, this,[=](bool checked){
+        isTest = checked;
+        qDebug()<<isTest;
+    });
+    connect(this, &MainWindow::TestCamImageCaptured, this, &MainWindow::TestCamImageCapturedAndReady);
 }
 
 MainWindow::~MainWindow()
@@ -742,6 +747,27 @@ void MainWindow::on_StopAcquisition_clicked()
 void MainWindow::slotShowImage(int camIndex, AcquisitionThread* camAcq, QLabel* label,
                                     std::unordered_map<int, std::deque<cv::Mat>>& photoQueue, int& num, bool& isNew,
                                     const char* signalName, bool& isCaptured){
+    std::mutex* mtx;
+    QComboBox* combox;
+    switch (camIndex) {
+    case 0:
+        mtx = &mtx1;
+        combox = ui->GetModel_comboBox;
+        break;
+    case 1:
+        mtx = &mtx2;
+        combox = ui->GetModel_comboBox_2;
+        break;
+    case 2:
+        mtx = &mtx3;
+        combox = ui->GetModel_comboBox_3;
+        break;
+    case 3:
+        mtx = &mtx4;
+        combox = ui->GetModel_comboBox_4;
+        break;
+    }
+
     std::shared_ptr<QImage> m_ImageForShow = camAcq->PopFrontFromShowImageDeque();
     QImage objImgScaled = m_ImageForShow->scaled(label->width(), label->height(),
                                                  Qt::IgnoreAspectRatio, Qt::FastTransformation);
@@ -754,7 +780,12 @@ void MainWindow::slotShowImage(int camIndex, AcquisitionThread* camAcq, QLabel* 
     // Check if new image and store it
     if (isNew) {
         // Dynamically invoke the signal method
-        QMetaObject::invokeMethod(this, signalName);
+        if(isTest){
+            emit TestCamImageCaptured(photoQueue,combox,isNew,camIndex);
+        }else{
+            QMetaObject::invokeMethod(this, signalName);
+        }
+        std::lock_guard<std::mutex> lock(*mtx);
         photoQueue[num].push_back(img);
         isCaptured = true;
     }
@@ -897,53 +928,62 @@ void MainWindow::onLogMessage(const QString &message){
 
 void MainWindow::slotStartFirstCamTask(){
     SampleTimer1->start(SampleInterval);
-    if(!detectStreams[0]->StartTask()){
+    if(!detectStreams[0]->StartTask()&&!isTest){
         ui->Log_textBrowser->append("Start task failed");
     }
 }
 
 void MainWindow::slotEndFirstCamTask(){
-    detectStreams[0]->EndTask();
+    if(!isTest){
+        detectStreams[0]->EndTask();
+    }
     SampleTimer1->stop();
 }
 
 void MainWindow::slotStartSecondCamTask(){
     SampleTimer2->start(SampleInterval);
-    if(!detectStreams[1]->StartTask()){
+    if(!detectStreams[1]->StartTask()&&!isTest){
         ui->Log_textBrowser->append("Start task failed");
     }
 }
 
 void MainWindow::slotEndSecondCamTask(){
-    detectStreams[1]->EndTask();
+    if(!isTest){
+        detectStreams[1]->EndTask();
+    }
     SampleTimer2->stop();
 }
 
 void MainWindow::slotStartThirdCamTask(){
     SampleTimer3->start(SampleInterval);
-    if(!detectStreams[2]->StartTask()){
+    if(!detectStreams[2]->StartTask()&&!isTest){
         ui->Log_textBrowser->append("Start task failed");
     }
 }
 
 void MainWindow::slotEndThirdCamTask(){
-    detectStreams[2]->EndTask();
+    if(!isTest){
+        detectStreams[2]->EndTask();
+    }
     SampleTimer3->stop();
 }
 
 void MainWindow::slotStartForthCamTask(){
     SampleTimer4->start(SampleInterval);
-    if(!detectStreams[3]->StartTask()){
+    if(!detectStreams[3]->StartTask()&&!isTest){
         ui->Log_textBrowser->append("Start task failed");
     }
 }
 
 void MainWindow::slotEndForthCamTask(){
-    detectStreams[3]->EndTask();
+    if(!isTest){
+        detectStreams[3]->EndTask();
+    }
     SampleTimer4->stop();
 }
 
 void MainWindow::FirstCamImagesCapturedAndReady() {
+    std::lock_guard<std::mutex> lock(mtx1);
     if (is1&&!GlobalVariable::GetInstance().photoQueues1[GlobalVariable::GetInstance().Num1].empty()) {
         // 检查 forward 和 backward 图片都已经准备好
         cv::Mat sectionImageForward =  GlobalVariable::GetInstance().photoQueues1[GlobalVariable::GetInstance().Num1].front();
@@ -955,6 +995,7 @@ void MainWindow::FirstCamImagesCapturedAndReady() {
 }
 
 void MainWindow::SecondCamImagesCapturedAndReady() {
+    std::lock_guard<std::mutex> lock(mtx2);
     if (is2&&!GlobalVariable::GetInstance().photoQueues2[GlobalVariable::GetInstance().Num2].empty()) {
         // 检查 forward 和 backward 图片都已经准备好
         cv::Mat sectionImageForward =  GlobalVariable::GetInstance().photoQueues2[GlobalVariable::GetInstance().Num2].front();
@@ -966,6 +1007,7 @@ void MainWindow::SecondCamImagesCapturedAndReady() {
 }
 
 void MainWindow::ThirdCamImagesCapturedAndReady() {
+    std::lock_guard<std::mutex> lock(mtx3);
     if (is3&&!GlobalVariable::GetInstance().photoQueues3[GlobalVariable::GetInstance().Num3].empty()) {
         // 检查 forward 和 backward 图片都已经准备好
         cv::Mat sectionImageForward =  GlobalVariable::GetInstance().photoQueues3[GlobalVariable::GetInstance().Num3].front();
@@ -979,6 +1021,7 @@ void MainWindow::ThirdCamImagesCapturedAndReady() {
 }
 
 void MainWindow::ForthCamImagesCapturedAndReady() {
+    std::lock_guard<std::mutex> lock(mtx4);
     if (is4&&!GlobalVariable::GetInstance().photoQueues4[GlobalVariable::GetInstance().Num4].empty()) {
         // 检查 forward 和 backward 图片都已经准备好
         cv::Mat sectionImageForward =  GlobalVariable::GetInstance().photoQueues4[GlobalVariable::GetInstance().Num4].front();
@@ -1311,20 +1354,29 @@ void MainWindow::on_startTestButton_clicked()
     switch (Cam) {
     case 1:
         slotStartFirstCamTask();
+        GlobalVariable::GetInstance().isNew1 = true;
+        GlobalVariable::GetInstance().photoQueues1[0] = std::deque<cv::Mat>();
         break;
     case 2:
         slotStartSecondCamTask();
+        GlobalVariable::GetInstance().isNew2 = true;
+        GlobalVariable::GetInstance().photoQueues2[0] = std::deque<cv::Mat>();
+
         break;
     case 3:
         slotStartThirdCamTask();
+        GlobalVariable::GetInstance().isNew3 = true;
+        GlobalVariable::GetInstance().photoQueues3[0] = std::deque<cv::Mat>();
         break;
     case 4:
         slotStartForthCamTask();
+        GlobalVariable::GetInstance().isNew4 = true;
+        GlobalVariable::GetInstance().photoQueues4[0] = std::deque<cv::Mat>();
         break;
     }
 }
 
-void MainWindow::on_stopTestButton_2_clicked()
+void MainWindow::on_stopTestButton_clicked()
 {
     std::string trueString = ui->trueStringlineEdit->text().toStdString();
     int Cam = ui->GetCamcomboBox->currentText().toInt();
@@ -1347,6 +1399,40 @@ void MainWindow::on_stopTestButton_2_clicked()
         break;
     }
 
+}
+
+void MainWindow::TestCamImageCapturedAndReady(std::unordered_map<int, std::deque<cv::Mat>>& photoQueue,
+                                              QComboBox* combox, bool& isNew, int CamID){
+    std::mutex* mtx = nullptr;
+    switch (CamID) {
+    case 0: mtx = &mtx1; break;
+    case 1: mtx = &mtx2; break;
+    case 2: mtx = &mtx3; break;
+    case 3: mtx = &mtx4; break;
+    }
+    int index = combox->currentIndex();
+    std::lock_guard<std::mutex> lock(*mtx);
+
+    if(isNew&&!photoQueue[0].empty()){
+        cv::Mat testImage = photoQueue[0].front();
+        photoQueue[0].pop_front();
+        testThread = std::thread([this,testImage,index](){
+            TYPE outputFrame;
+            if(detectors[index]->Detect(testImage,outputFrame)){
+                auto resultImage = testImage.clone();
+                detectors[index]->DrawResult(resultImage,outputFrame);
+                QMetaObject::invokeMethod(this, [this, resultImage]() {
+                    if (resultImage.empty()) return;
+
+                    // 将 OpenCV 图像转换为 QImage
+                    QImage qImg(resultImage.data, resultImage.cols, resultImage.rows, resultImage.step,
+                                QImage::Format_RGB888);
+                    ui->ImageLabel_5->setPixmap(QPixmap::fromImage(qImg));
+                });
+            }
+        });
+        testThread.join();
+    }
 }
 
 void MainWindow::computeAccuracy(int streamIndex, std::string &trueString){
@@ -1400,6 +1486,4 @@ int MainWindow::levenshtein_distance(const string& s1, const string& s2)
     // 返回 Levenshtein 距离
     return dp[m][n];
 }
-
-
 
