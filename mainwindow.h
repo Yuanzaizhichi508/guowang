@@ -268,8 +268,9 @@ private:
     int idx3 = 0;
     int idx4 = 0;
     std::mutex ui_mutex;
+    std::mutex task_mutex;
     std::mutex mtx1, mtx2, mtx3, mtx4;
-    std::thread testThread;
+    int currentTaskID = -1;
 
 
     int count1 = 0;

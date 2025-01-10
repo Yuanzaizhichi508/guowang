@@ -1383,19 +1383,19 @@ void MainWindow::on_stopTestButton_clicked()
     switch (Cam) {
     case 1:
         slotEndFirstCamTask();
-        computeAccuracy(0,trueString);
+        //computeAccuracy(0,trueString);
         break;
     case 2:
         slotEndSecondCamTask();
-        computeAccuracy(1,trueString);
+        //computeAccuracy(1,trueString);
         break;
     case 3:
         slotEndThirdCamTask();
-        computeAccuracy(2,trueString);
+        //computeAccuracy(2,trueString);
         break;
     case 4:
         slotEndForthCamTask();
-        computeAccuracy(3,trueString);
+        //computeAccuracy(3,trueString);
         break;
     }
 
@@ -1411,27 +1411,57 @@ void MainWindow::TestCamImageCapturedAndReady(std::unordered_map<int, std::deque
     case 3: mtx = &mtx4; break;
     }
     int index = combox->currentIndex();
-    std::lock_guard<std::mutex> lock(*mtx);
+    std::string trueString = ui->trueStringlineEdit->text().toStdString();
 
     if(isNew&&!photoQueue[0].empty()){
+        std::lock_guard<std::mutex> lock(*mtx);
         cv::Mat testImage = photoQueue[0].front();
         photoQueue[0].pop_front();
-        testThread = std::thread([this,testImage,index](){
+        int taskID = rand();
+        {
+            std::lock_guard<std::mutex> lock(task_mutex);
+            if (currentTaskID == -1) {
+                currentTaskID = taskID;
+            }
+        }
+        auto future = std::async(std::launch::async,[this,testImage,index,trueString,taskID](){
             TYPE outputFrame;
             if(detectors[index]->Detect(testImage,outputFrame)){
                 auto resultImage = testImage.clone();
                 detectors[index]->DrawResult(resultImage,outputFrame);
-                QMetaObject::invokeMethod(this, [this, resultImage]() {
-                    if (resultImage.empty()) return;
+                detectors[index]->_ExtractString(outputFrame,resultImage);
+                std::string result = outputFrame.result;
 
-                    // 将 OpenCV 图像转换为 QImage
-                    QImage qImg(resultImage.data, resultImage.cols, resultImage.rows, resultImage.step,
-                                QImage::Format_RGB888);
-                    ui->ImageLabel_5->setPixmap(QPixmap::fromImage(qImg));
+                int distance = levenshtein_distance(trueString, result);
+                double accuracy = 1.0 - (double)distance / max(result.size(), trueString.size());
+
+                QMetaObject::invokeMethod(this, [this, result, distance, accuracy, resultImage, taskID]() {
+                    {
+                        std::lock_guard<std::mutex> lock(task_mutex);
+                        if (taskID != currentTaskID) return;
+                    }
+                    QString logMessage = QString("识别结果: %1\nLevenshtein 距离: %2\n正确率: %3%")
+                                             .arg(QString::fromStdString(result))
+                                             .arg(distance)
+                                             .arg(accuracy * 100);
+                    {
+                        std::lock_guard<std::mutex> lock(ui_mutex);
+                        ui->Log_textBrowser->append(logMessage);
+                    }
+
+                    if (!resultImage.empty()) {
+                        QImage qImg(resultImage.data, resultImage.cols, resultImage.rows, resultImage.step,
+                                    QImage::Format_RGB888);
+                        ui->ImageLabel_5->setPixmap(QPixmap::fromImage(qImg));
+                    }
                 });
             }
         });
-        testThread.join();
+        {
+            std::lock_guard<std::mutex> lock(task_mutex);
+            currentTaskID = taskID;
+        }
+        //future.get();
     }
 }
 
