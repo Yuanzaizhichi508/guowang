@@ -140,9 +140,9 @@ void MainWindow::closeEvent(QCloseEvent *event) {
         QTextStream out(&file);
         out << textContent;
         file.close();
-        ui->Log_textBrowser->append("Log saved to: " + filePath);  // 可选：在界面显示保存路径
+       UpdateLog("Log saved to: " + filePath);  // 可选：在界面显示保存路径
     } else {
-        ui->Log_textBrowser->append("Failed to save log!");  // 可选：在界面显示保存失败
+       UpdateLog("Failed to save log!");  // 可选：在界面显示保存失败
     }
 
     // 确保关闭事件正常进行
@@ -251,9 +251,9 @@ void MainWindow::on_PlcConnect_clicked()
     ipArray[sizeof(ipArray) - 1] = '\0';
     BOOL bRet = Init_ETH_String(ipArray,GlobalVariable::GetInstance().nNetId,GlobalVariable::GetInstance().nIpPort);
     if(bRet){
-        ui->Log_textBrowser->append("连接成功");
+       UpdateLog("连接成功");
     }else{
-        ui->Log_textBrowser->append("连接失败");
+       UpdateLog("连接失败");
     }
 }
 
@@ -262,9 +262,9 @@ void MainWindow::on_PlcDisConnect_clicked()
 {
     BOOL  bRet = Exit_ETH (GlobalVariable::GetInstance().nNetId);
     if(bRet){
-        ui->Log_textBrowser->append("断开连接成功");
+       UpdateLog("断开连接成功");
     }else{
-        ui->Log_textBrowser->append("断开连接失败");
+       UpdateLog("断开连接失败");
     }
 }
 
@@ -348,7 +348,7 @@ void MainWindow::OpenDevice(){
     emStatus = GXSetEnum(deviceHandles[m_nOperateID], GX_ENUM_ACQUISITION_MODE, GX_ACQ_MODE_CONTINUOUS);
     GX_VERIFY(emStatus);
 
-    ui->Log_textBrowser->append("相机打开成功");
+   UpdateLog("相机打开成功");
     return;
 }
 
@@ -592,7 +592,7 @@ void MainWindow::on_StartAcquisition_clicked()
     m_pstCam[m_nOperateID].pRawBuffer = new BYTE[(size_t)(m_pstCam[m_nOperateID].nPayLoadSise)];
     if(m_pstCam[m_nOperateID].pRawBuffer == NULL)
     {
-        ui->Log_textBrowser->append("申请资源失败!");
+       UpdateLog("申请资源失败!");
         return;
     }
 
@@ -602,7 +602,7 @@ void MainWindow::on_StartAcquisition_clicked()
         m_pstCam[m_nOperateID].pImageBuffer = new BYTE[(size_t)(m_pstCam[m_nOperateID].nImageWidth * m_pstCam[m_nOperateID].nImageHeight * 3)];
         if (m_pstCam[m_nOperateID].pImageBuffer == NULL)
         {
-            ui->Log_textBrowser->append("申请资源失败!");
+           UpdateLog("申请资源失败!");
             RELEASE_ALLOC_ARR(m_pstCam[m_nOperateID].pRawBuffer);
             return;
         }
@@ -613,7 +613,7 @@ void MainWindow::on_StartAcquisition_clicked()
         m_pstCam[m_nOperateID].pImageBuffer = new BYTE[(size_t)(m_pstCam[m_nOperateID].nImageWidth * m_pstCam[m_nOperateID].nImageHeight)];
         if (m_pstCam[m_nOperateID].pImageBuffer == NULL)
         {
-            ui->Log_textBrowser->append("申请资源失败!");
+           UpdateLog("申请资源失败!");
             RELEASE_ALLOC_ARR(m_pstCam[m_nOperateID].pRawBuffer);
             return;
         }
@@ -923,13 +923,13 @@ void MainWindow::slotSaveForthCamImage(){
 }
 
 void MainWindow::onLogMessage(const QString &message){
-    ui->Log_textBrowser->append(message);
+   UpdateLog(message);
 }
 
 void MainWindow::slotStartFirstCamTask(){
     SampleTimer1->start(SampleInterval);
     if(!detectStreams[0]->StartTask()&&!isTest){
-        ui->Log_textBrowser->append("Start task failed");
+       UpdateLog("Start task failed");
     }
 }
 
@@ -943,7 +943,7 @@ void MainWindow::slotEndFirstCamTask(){
 void MainWindow::slotStartSecondCamTask(){
     SampleTimer2->start(SampleInterval);
     if(!detectStreams[1]->StartTask()&&!isTest){
-        ui->Log_textBrowser->append("Start task failed");
+       UpdateLog("Start task failed");
     }
 }
 
@@ -957,7 +957,7 @@ void MainWindow::slotEndSecondCamTask(){
 void MainWindow::slotStartThirdCamTask(){
     SampleTimer3->start(SampleInterval);
     if(!detectStreams[2]->StartTask()&&!isTest){
-        ui->Log_textBrowser->append("Start task failed");
+       UpdateLog("Start task failed");
     }
 }
 
@@ -971,7 +971,7 @@ void MainWindow::slotEndThirdCamTask(){
 void MainWindow::slotStartForthCamTask(){
     SampleTimer4->start(SampleInterval);
     if(!detectStreams[3]->StartTask()&&!isTest){
-        ui->Log_textBrowser->append("Start task failed");
+       UpdateLog("Start task failed");
     }
 }
 
@@ -1046,20 +1046,20 @@ void MainWindow::updateCombox(int streamIndex, const std::unordered_map<int, int
             resultMessage = QString::fromStdString(res.value().output.result);
             candidates = testDataset.FindStampString(lengths.at(num), 10);
             MatchResult result = matcher.MatchString(res.value().output.result, candidates, diff);
-            ui->Log_textBrowser->append(directionMessage);
-            ui->Log_textBrowser->append("测量长度: " + QString::number(lengths.at(num)));
+           UpdateLog(directionMessage);
+           UpdateLog("测量长度: " + QString::number(lengths.at(num)));
             if (result.matched) {
                 QString diffResult;
-                ui->Log_textBrowser->append("识别结果: " + resultMessage);
-                ui->Log_textBrowser->append("匹配结果: " + QString::fromStdString(result.result));
+               UpdateLog("识别结果: " + resultMessage);
+               UpdateLog("匹配结果: " + QString::fromStdString(result.result));
                 for (auto& d : diff) {
                     diffResult.append(d == MatchType::MATCH ? " " : "^");
                 }
-                ui->Log_textBrowser->append("整体区别: " + diffResult);
+               UpdateLog("整体区别: " + diffResult);
                 resultComboBox->addItem(directionMessage + " " + resultMessage + " 匹配: " + QString::fromStdString(result.result));
             } else {
-                ui->Log_textBrowser->append("识别结果: " + resultMessage);
-                ui->Log_textBrowser->append("匹配结果: 无");
+               UpdateLog("识别结果: " + resultMessage);
+               UpdateLog("匹配结果: 无");
                 resultComboBox->addItem(directionMessage + " " + resultMessage + " 匹配: 无");
             }
 
@@ -1225,26 +1225,26 @@ void MainWindow::setupModelComboBox(){
                                             Config::GetHeightThreshold(),
                                             Config::GetRevThreshold());
         if(detectors[i]->LoadModel(modelPath, isCuda)){
-            ui->Log_textBrowser->append("model loaded");
+           UpdateLog("model loaded");
         }
         if(detectors[i]->LoadClasses(classesPath)){
-            ui->Log_textBrowser->append("classes loaded");
+           UpdateLog("classes loaded");
         }
         if(detectors[i]->LoadReverseMap(reverseMapPath)){
-            ui->Log_textBrowser->append("reverse map loaded");
+           UpdateLog("reverse map loaded");
         }
         #else
         detectors[i] = new PaddleOnnxDetector(Config::GetHorizontalMargin(),
                                               Config::GetHeightThreshold(),
                                               Config::GetRevThreshold());
         if(detectors[i]->InitDet(Config::GetPaddleDetModelPath(), Config::GetPaddleDetBinaryThreshold(), Config::GetPaddleDetPolygonThreshold(), Config::GetPaddleDetUnclipRatio(), Config::GetPaddleDetMaxCandidates(), isCuda)){
-            ui->Log_textBrowser->append("det loaded");
+           UpdateLog("det loaded");
         }
         if(detectors[i]->InitCls(Config::GetPaddleClsModelPath(), isCuda)){
-            ui->Log_textBrowser->append("cls loaded");
+           UpdateLog("cls loaded");
         }
         if(detectors[i]->InitRec(Config::GetPaddleRecModelPath(), Config::GetPaddleRecDictPath(), isCuda)){
-            ui->Log_textBrowser->append("rec loaded");
+           UpdateLog("rec loaded");
         }
         #endif
 
@@ -1271,17 +1271,16 @@ void MainWindow::on_GetModel_comboBox_activated(int index)
         delete detectStreams[0];  // 删除原指针
         detectStreams[0] = nullptr;  // 防止悬空指针，设置为 nullptr
     }
-    ui->Log_textBrowser->append("====第一个相机加载模型====");
+   UpdateLog("====第一个相机加载模型====");
     detectStreams[0] = new DetectStream<TYPE>(*(detectors[index]), 3, [&,index](cv::Mat img, TYPE output) {
         detectors[index]->DrawResult(img,output);
-        {std::lock_guard<std::mutex> lock(ui_mutex);
         QString resultMessage = QString("result: %1 @ 第一个相机结果").arg(QString::fromStdString(output.result));
-            ui->Log_textBrowser->append(resultMessage);}
+        UpdateLog(resultMessage);
         cv::imwrite("images/first/" + std::to_string(idx1++) + ".jpg", img);
         std::cout << "result: " << output.result << " @ " << 0 << std::endl;
     });
     if(!detectStreams[0]->Start()){
-        ui->Log_textBrowser->append("Start failed");
+       UpdateLog("Start failed");
     }
 }
 
@@ -1291,18 +1290,17 @@ void MainWindow::on_GetModel_comboBox_2_activated(int index)
         delete detectStreams[1];  // 删除原指针
         detectStreams[1] = nullptr;  // 防止悬空指针，设置为 nullptr
     }
-    ui->Log_textBrowser->append("====第二个相机加载模型====");
+   UpdateLog("====第二个相机加载模型====");
 
     detectStreams[1] = new DetectStream<TYPE>(*(detectors[index]), 3, [&,index](cv::Mat img, TYPE output) {
         detectors[index]->DrawResult(img,output);
-        {std::lock_guard<std::mutex> lock(ui_mutex);
         QString resultMessage = QString("result: %1 @ 第二个相机结果").arg(QString::fromStdString(output.result));
-            ui->Log_textBrowser->append(resultMessage);}
+        UpdateLog(resultMessage);
         cv::imwrite("images/second/" + std::to_string(idx2++) + ".jpg", img);
         std::cout << "result: " << output.result << " @ " << 1 << std::endl;
     });
     if(!detectStreams[1]->Start()){
-        ui->Log_textBrowser->append("Start failed");
+       UpdateLog("Start failed");
     }
 }
 
@@ -1312,18 +1310,17 @@ void MainWindow::on_GetModel_comboBox_3_activated(int index)
         delete detectStreams[2];  // 删除原指针
         detectStreams[2] = nullptr;  // 防止悬空指针，设置为 nullptr
     }
-    ui->Log_textBrowser->append("====第三个相机加载模型====");
+   UpdateLog("====第三个相机加载模型====");
 
     detectStreams[2] = new DetectStream<TYPE>(*(detectors[index]), 3, [&,index](cv::Mat img, TYPE output) {
         detectors[index]->DrawResult(img,output);
-        {std::lock_guard<std::mutex> lock(ui_mutex);
         QString resultMessage = QString("result: %1 @ 第三个相机结果").arg(QString::fromStdString(output.result));
-            ui->Log_textBrowser->append(resultMessage);}
+        UpdateLog(resultMessage);
         cv::imwrite("images/third/" + std::to_string(idx3++) + ".jpg", img);
         std::cout << "result: " << output.result << " @ " << 2 << std::endl;
     });
     if(!detectStreams[2]->Start()){
-        ui->Log_textBrowser->append("Start failed");
+       UpdateLog("Start failed");
     }
 }
 
@@ -1333,18 +1330,17 @@ void MainWindow::on_GetModel_comboBox_4_activated(int index)
         delete detectStreams[3];  // 删除原指针
         detectStreams[3] = nullptr;  // 防止悬空指针，设置为 nullptr
     }
-    ui->Log_textBrowser->append("====第四个相机加载模型====");
+   UpdateLog("====第四个相机加载模型====");
 
     detectStreams[3] = new DetectStream<TYPE>(*(detectors[index]), 3, [&,index](cv::Mat img, TYPE output) {
         detectors[index]->DrawResult(img,output);
-        {std::lock_guard<std::mutex> lock(ui_mutex);
         QString resultMessage = QString("result: %1 @ 第四个相机结果").arg(QString::fromStdString(output.result));
-            ui->Log_textBrowser->append(resultMessage);}
+           UpdateLog(resultMessage);
         cv::imwrite("images/forth/" + std::to_string(idx4++) + ".jpg", img);
         std::cout << "result: " << output.result << " @ " << 3 << std::endl;
     });
     if(!detectStreams[3]->Start()){
-        ui->Log_textBrowser->append("Start failed");
+       UpdateLog("Start failed");
     }
 }
 
@@ -1444,10 +1440,7 @@ void MainWindow::TestCamImageCapturedAndReady(std::unordered_map<int, std::deque
                                              .arg(QString::fromStdString(result))
                                              .arg(distance)
                                              .arg(accuracy * 100);
-                    {
-                        std::lock_guard<std::mutex> lock(ui_mutex);
-                        ui->Log_textBrowser->append(logMessage);
-                    }
+                    UpdateLog(logMessage);
 
                     if (!resultImage.empty()) {
                         QImage qImg(resultImage.data, resultImage.cols, resultImage.rows, resultImage.step,
@@ -1465,25 +1458,25 @@ void MainWindow::TestCamImageCapturedAndReady(std::unordered_map<int, std::deque
     }
 }
 
-void MainWindow::computeAccuracy(int streamIndex, std::string &trueString){
-    QString resultMessage;
-    while(true){
-        std::optional<DetectSectionWork<TYPE>> res = detectStreams[streamIndex]->GetResult();
-        if(res.has_value()){
-            std::string result = res.value().output.result;
-            resultMessage = QString::fromStdString(result);
-            ui->Log_textBrowser->append("识别结果: " + resultMessage);
-            int distance = levenshtein_distance(trueString,res.value().output.result);
-            int max_len = max(result.size(), trueString.size());
-            double accuracy = 1.0 - (double)distance / max_len;
-            QString accuracyStr = QString::number(accuracy, 'f', 2);
-            ui->Log_textBrowser->append("正确率:" + accuracyStr);
-            }
-        else{
-            break;
-        }
-    }
-}
+// void MainWindow::computeAccuracy(int streamIndex, std::string &trueString){
+//     QString resultMessage;
+//     while(true){
+//         std::optional<DetectSectionWork<TYPE>> res = detectStreams[streamIndex]->GetResult();
+//         if(res.has_value()){
+//             std::string result = res.value().output.result;
+//             resultMessage = QString::fromStdString(result);
+//             ui->Log_textBrowser->append("识别结果: " + resultMessage);
+//             int distance = levenshtein_distance(trueString,res.value().output.result);
+//             int max_len = max(result.size(), trueString.size());
+//             double accuracy = 1.0 - (double)distance / max_len;
+//             QString accuracyStr = QString::number(accuracy, 'f', 2);
+//             ui->Log_textBrowser->append("正确率:" + accuracyStr);
+//             }
+//         else{
+//             break;
+//         }
+//     }
+// }
 
 
 int MainWindow::levenshtein_distance(const string& s1, const string& s2)
@@ -1517,3 +1510,12 @@ int MainWindow::levenshtein_distance(const string& s1, const string& s2)
     return dp[m][n];
 }
 
+void MainWindow::UpdateLog(const QString& logMessage){
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+    QString timeStamp = currentDateTime.toString("yyyy-MM-dd HH:mm:ss");
+    QString formattedMessage = QString("[%1] %2").arg(timeStamp, logMessage);
+    {
+        std::lock_guard<std::mutex> lock(ui_mutex);
+        ui->Log_textBrowser->append(formattedMessage);  // 追加带时间戳的日志
+    }
+}

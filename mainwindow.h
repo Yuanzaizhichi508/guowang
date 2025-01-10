@@ -51,7 +51,9 @@ public:
 
     int levenshtein_distance(const string& s1, const string& s2);
 
-    void computeAccuracy(int streamIndex, std::string &trueString);
+    // void computeAccuracy(int streamIndex, std::string &trueString);
+
+    void UpdateLog(const QString& logMessage);
 
 signals:
     void firstCamImageCaptured();
